@@ -1,0 +1,82 @@
+service: sls 
+
+frameworkVersion: '2'
+
+custom:
+  settings:
+    TODO_TABLE: todos
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-2
+  profile: serverless-admin
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.TODO_TABLE}"
+  
+functions:
+  createList:
+    handler: handler.createList
+    events:
+      - http:
+          path: /todo
+          method: post
+  getAllLists:
+    handler: handler.getAllLists
+    events:
+      - http:
+          path: /todos
+          method: get
+  getLists:
+    handler: handler.getLists
+    events:
+      - http:
+          path: /todos/{number}
+          method: get
+  getList:
+    handler: handler.getList
+    events:
+      - http:
+          path: /todo/{id}
+          method: get
+  updateList:
+    handler: handler.updateList
+    events:
+      - http:
+          path: /todo/{id}
+          method: put
+  deleteList:
+    handler: handler.deleteList
+    events:
+      - http:
+          path: /todo/{id}
+          method: delete
+ 
+resources:
+  Resources:
+    TodoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.TODO_TABLE}
+
+
